@@ -11,6 +11,12 @@ interface ApiAdapter {
 
     @GET("user")
     suspend fun getUser(): User
+
+    @GET("user1")
+    suspend fun getUser1(): User
+
+    @GET("user2")
+    suspend fun getUser2(): User
 }
 
 @Serializable
@@ -25,23 +31,24 @@ interface TokenProvider {
 class MyAuthenticator(private val tokenProvider: TokenProvider) : Authenticator {
 
     override fun authenticate(route: Route?, response: Response): Request? {
-        val token = tokenProvider.token() ?: return null
 
-        println("MyAuthenticator : ${System.currentTimeMillis()} : $route, $response, $token")
+        println("MyAuthenticator1 : ${System.currentTimeMillis()} : $route, $response")
 
         synchronized(this) {
             val newToken = tokenProvider.token()
+            val newAuthorization = "Bearer $newToken"
 
             println("MyAuthenticator2 : ${System.currentTimeMillis()} : $route, $response, $newToken")
 
-            if (response.request.header("Authorization") != null) {
+            val oldAuthorization = response.request.header("Authorization")
+            if (oldAuthorization != null) {
 
-                if (newToken != token) {
+                if (newAuthorization != oldAuthorization) {
                     println("MyAuthenticator3 : ${System.currentTimeMillis()} : $route, $response, $newToken")
                     return response.request
                         .newBuilder()
                         .removeHeader("Authorization")
-                        .addHeader("Authorization", "Bearer $newToken")
+                        .addHeader("Authorization", newAuthorization)
                         .build()
                 }
 
